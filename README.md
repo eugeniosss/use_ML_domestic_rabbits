@@ -1,4 +1,4 @@
-# Rabbit Genomes ML
+# Rabbit Genomes Machine Learning
 
 This repository contains scripts, notebooks, and toy datasets related to my personal PhD work on rabbit genomes.  
 The main purpose of this repo is **exploratory analyses** and **learning machine learning techniques** (e.g., scikit-learn, PyTorch) applied to genomic data.
