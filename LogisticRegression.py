@@ -50,7 +50,7 @@ def get_accuracy_of_model(y_pred, y_test):
 
 
 if __name__ == "__main__":
-    X,y=read_and_parse("rabbits.csv")
+    X,y=read_and_parse("rabbits_multisnp.csv")
     X_read=only_bi(X)
     X_train, X_test, y_train, y_test= parse_train_test(X_read, y, randome_state=0)
     
