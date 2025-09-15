@@ -37,12 +37,11 @@ le=LabelEncoder()
 y_train_enc=le.fit_transform(y_train)
 y_test_enc=le.transform(y_test)
 
-# Convert numpy → torch
-X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32)
-y_train_tensor = torch.tensor(y_train_enc, dtype=torch.float32).view(-1,1)  # make it (n_samples,1)
-
-X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32)
-y_test_tensor = torch.tensor(y_test_enc, dtype=torch.float32).view(-1,1)
+# Convert to torch tensors
+X_train_tensor = torch.FloatTensor(X_train.values)
+X_test_tensor = torch.FloatTensor(X_test.values)
+y_train_tensor = torch.LongTensor(y_train_enc) 
+y_test_tensor = torch.LongTensor(y_test_enc)
 
 # Wrap in dataset + dataloader (for batching)
 train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
@@ -50,11 +49,11 @@ train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 
 class SNPClassifier(nn.Module):
     def __init__(self, input_dim):
-        super(SNPClassifier, self).__init__()
+        super().__init__()
         self.fc1 = nn.Linear(input_dim, 32)
         self.fc2 = nn.Linear(32, 16)
         self.fc3 = nn.Linear(16, 8)
-        self.fc4 = nn.Linear(8, 1)  # binary output
+        self.fc4 = nn.Linear(8, 2)  # binary output
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
@@ -64,10 +63,11 @@ class SNPClassifier(nn.Module):
         return x
 
 # Initialize model
-model = SNPClassifier(input_dim=X_train.shape[1])
+model = SNPClassifier(X_train.shape[1])
 
 # Loss function & optimizer
-criterion = nn.BCELoss()  # Binary cross-entropy
+#criterion = nn.BCELoss()  # Binary cross-entropy
+criterion=nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 n_epochs = 50  # number of times we pass through the entire dataset
@@ -78,7 +78,7 @@ for epoch in range(n_epochs):
 
     for X_batch, y_batch in train_loader:
         optimizer.zero_grad()          # reset gradients from previous batch
-        outputs = model(X_batch)       # forward pass
+        outputs = model.forward(X_batch)       # forward pass
         loss = criterion(outputs, y_batch)  # compute loss
         loss.backward()                # backpropagation
         optimizer.step()               # update weights
@@ -87,9 +87,9 @@ for epoch in range(n_epochs):
 
     print(f"Epoch {epoch+1}/{n_epochs}, Loss: {running_loss/len(train_loader):.4f}")
 
-model.eval()  # set model to evaluation mode
-with torch.no_grad():  # no need to track gradients
-    y_pred = model(X_test_tensor).round()   # 0 or 1
+with torch.no_grad():
+    y_logits = model(X_test_tensor)
+    y_pred = torch.argmax(y_logits, dim=1)   # pick class with highest score
     accuracy = (y_pred == y_test_tensor).float().mean().item()
 
 print(f"Test Accuracy: {accuracy:.4f}")
